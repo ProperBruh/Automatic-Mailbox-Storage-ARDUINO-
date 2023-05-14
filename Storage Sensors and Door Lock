@@ -1,0 +1,137 @@
+#define trigPin1 3  //10% Storage Space Sensor
+#define echoPin1 2
+#define trigPin2 5  //20% Storage Space Sensor
+#define echoPin2 4
+#define trigPin3 7  //30% Storage Space Sensor
+#define echoPin3 6
+#define trigPin4 13 //40% Storage Space Sensor
+#define echoPin4 12
+  //Highest percentage counted would be displayed onto application
+  
+const int buttonPin1 = 10; //pin for pushbutton 1
+int buttonState1 = 0;      //variable for reading pushbutton status
+const int buttonPin2 = 9;  //pin for pushbutton 2
+int buttonState2 = 0;
+const int buttonPin3 = 8;  //pin for pushbutton 3
+int buttonState3 = 0;
+
+#include <Servo.h> 
+Servo lockservo;
+int pos = 0;  
+int state;
+int flag=0;
+int PIR_pin = A0;
+int value = 0;         // PIR Sensor starts with LOW value
+int motionState = LOW;
+  //duration and distance set up for sensors
+long duration0;
+long duration1;
+long duration2;
+long duration3;
+long duration4;
+int distance0;
+int distance1;
+int distance2;
+int distance3;
+int distance4;
+  //Will be using 10 sensors that each count at a 10% mark up to 100%
+void setup() {
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT);
+  pinMode(echoPin3, INPUT);
+  pinMode(trigPin4, OUTPUT);
+  pinMode(echoPin4, INPUT);
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(buttonPin3, INPUT);
+  lockservo.attach(11);  
+  Serial.begin(9600); 
+  lockservo.write(0);
+}
+void loop() {
+  digitalWrite(trigPin1, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin1, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin1, LOW);
+  duration1 = pulseIn(echoPin1, HIGH);
+  distance1 = duration1 * 0.034 / 2;
+  digitalWrite(trigPin2, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin2, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin2, LOW);
+  duration2 = pulseIn(echoPin2, HIGH);
+  distance2 = duration2 * 0.034 / 2;
+  digitalWrite(trigPin3, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin3, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin3, LOW);
+  duration3 = pulseIn(echoPin3, HIGH);
+  distance3 = duration3 * 0.034 / 2;
+  digitalWrite(trigPin4, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin4, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin4, LOW);
+  duration4 = pulseIn(echoPin4, HIGH);
+  distance4 = duration4 * 0.034 / 2;
+  value = digitalRead(PIR_pin);
+  buttonState1 = digitalRead(buttonPin1);
+  buttonState2 = digitalRead(buttonPin2);
+  buttonState3 = digitalRead(buttonPin3);
+ // 10 Sensors will require MEGA2560 R3 (46 DIGITAL, each Sensor requiring 2)  
+  if (value == HIGH) {        //If PIR Sensor detects movement
+    if (motionState == LOW) {
+      Serial.println("Mail Detected in Mailbox");
+      value = LOW;
+      delay(750);
+     if (distance1 < 30) {
+     Serial.println("10% Storage Sensor Detected Mail");
+     delay(100);
+     }
+     if (distance2 < 30) {
+     Serial.println("20% Storage Sensor Detected Mail");
+     delay(100);
+     }
+     if (distance3 < 30) {
+     Serial.println("30% Storage Sensor Detected Mail");
+     delay(100);
+     }
+     if (distance4 < 30) {
+     Serial.println("40% Storage Sensor Detected Mail");
+     delay(100);
+     }
+    }
+  } 
+  if (buttonState2 == HIGH) {
+    lockservo.write(0); 
+    Serial.println("Door Locked");
+  }
+  if (buttonState3 == HIGH) {
+    lockservo.write(55);
+    Serial.println("Door UnLocked");
+  }
+ if (buttonState1 == HIGH) {
+  if (distance1 < 30) {
+    Serial.println("10% Storage Sensor Detected Mail");
+    delay(100);
+  }
+  if (distance2 < 30) {
+    Serial.println("20% Storage Sensor Detected Mail");
+    delay(100);
+  }
+  if (distance3 < 30) {
+    Serial.println("30% Storage Sensor Detected Mail");
+    delay(100);
+  }
+  if (distance4 < 30) {
+    Serial.println("40% Storage Sensor Detected Mail");
+    delay(100);
+  }
+ }
+}
