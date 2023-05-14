@@ -1,0 +1,145 @@
+//Code for Positional Mailbox Servo Trapdoor and Elevator (Automatic Circuit)
+#include <Servo.h>
+#define echoPin 2    // attach pin 2 to pin Echo of HC-SR04
+#define trigPin 3    // attach pin 3 to pin Trig of HC-SR04
+#define servoPin1 5  // attach pin 7 to LEFT trap door servo motor 1
+#define servoPin5 6  // attach pin 8 to LEFT trap door servo motor 2
+#define servoPin2 4  // attach pin 6 to RIGHT trap door servo motor 1
+#define servoPin6 7  // attach pin 9 to RIGHT trap door servo motor 2
+#define servoPin3 13 // attach pin 13 to elevator servo motor 1
+#define servoPin4 12 // attach pin 12 to elevator servo motor 2
+   
+const int buttonPin1 = 11; //pin for pushbutton 1 - Open trapdoor
+int buttonState1 = 0;      //variable for reading pushbutton status
+const int buttonPin2 = 10; //pin for pushbutton 2 - Close trapdoor
+int buttonState2 = 0;
+const int buttonPin3 = 9;  //pin for pushbutton 3 - Raise Elevator
+int buttonState3 = 0;
+const int buttonPin4 = 8;  //pin for pushbutton 4 - Lower Elevator
+int buttonState4 = 0;
+
+long duration;
+int pos = 0;
+int distance;
+int tiltVALUE1 = 0;    // Value range Serial.begin(9600) for tilt sensor
+int tiltVALUE2 = 0;
+
+Servo trapservo1;   // trapservo 1 to 4 for trap door servo motors
+Servo trapservo2;   // chose 4 servo motors, 2 for each trap door half
+Servo trapservo3;
+Servo trapservo4;
+Servo elevatorservo1; //elevatorservo 1 and 2 for elevator motors
+Servo elevatorservo2;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);  // Sets the trigPin as an OUTPUT
+  pinMode(echoPin, INPUT);   // Sets the echoPin as an INPUT
+  pinMode(A0, INPUT);        // Tilt Sensor Pin A0 as Analog INPUT
+  pinMode(A1, INPUT);        // Tilt Sensor to have automatic circuit ON/OFF
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(buttonPin3, INPUT);
+  pinMode(buttonPin4, INPUT);
+  Serial.begin(9600);
+  trapservo1.attach(servoPin1);     //trapservo1 attached to servoPin1
+  trapservo2.attach(servoPin2);     //trapservo2 attached to servoPin2
+  trapservo3.attach(servoPin5);     //trapservo3 attached to servoPin5
+  trapservo4.attach(servoPin6);     //trapservo4 attached to servoPin6
+  elevatorservo1.attach(servoPin3); //elevatorservo1 attached to servoPin3
+  elevatorservo2.attach(servoPin4); //elevatorservo2 attached to servoPin4
+  trapservo1.write(90);   //All trap door servo motors set to initial position
+  trapservo2.write(0);
+  trapservo3.write(90);
+  trapservo4.write(0);
+  elevatorservo1.write(93.99);
+  elevatorservo2.write(93.99);
+}
+
+void loop() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+  tiltVALUE1 = digitalRead(A0)*500;
+  tiltVALUE2 = digitalRead(A1)*500;
+  buttonState1 = digitalRead(buttonPin1);
+  buttonState2 = digitalRead(buttonPin2);
+  buttonState3 = digitalRead(buttonPin3);
+  buttonState4 = digitalRead(buttonPin4);
+  
+ if (tiltVALUE2 > 255) {  //When automatic circuit is ON
+  if (tiltVALUE1 < 250) {
+    Serial.println("OPENED MAILBOX - 5 Minutes until Trap Door Activates");
+    delay(3000); //Delay would be 300000 for 5 minute wait
+    Serial.println("Beginning Trap Door and Elevator Actions");
+    trapservo1.write(0);  //Trap door opens up to storage portion
+    trapservo2.write(90);
+    trapservo3.write(0);
+    trapservo4.write(90);
+    Serial.println("Opening Trap Door");
+    delay(3000);
+  }
+  else if (tiltVALUE1 > 255) {
+   if (distance < 30) {
+    Serial.println("Mail Obstructing Cover - Lowering Elevator");
+    trapservo1.write(0);  //Trap door opens up to storage portion
+    trapservo2.write(90);
+    trapservo3.write(0);
+    trapservo4.write(90);
+    elevatorservo1.write(94.00);
+    elevatorservo2.write(94.00);
+    delay(500);
+    elevatorservo1.write(93.99);
+    elevatorservo2.write(93.99);
+    delay(1000); //1 second wait before checking distance
+   }  
+   else if (distance > 30) {          //Elevator stops movement
+    Serial.println("Mail NOT Obstructing Cover - Elevator Is Not Moving \n  Trap Door Set to Initial Closed Position");
+    elevatorservo1.write(93.99); //Elevator servo motors do not move when no mail is detected
+    elevatorservo2.write(93.99);
+    trapservo1.write(90); //Trap door servos close up storage
+    trapservo2.write(0);
+    trapservo3.write(90);
+    trapservo4.write(0);
+    delay(3000); //Delay would be 300000 for 5 minute wait
+   }
+  }
+ }
+ if (tiltVALUE2 < 250) { // When automatic circuit is OFF
+  if (buttonState1 == HIGH) { // Manually open trapdoor
+    Serial.println("Manually opening trapdoor");
+    trapservo1.write(0);  //Trap door opens up to storage portion
+    trapservo2.write(90);
+    trapservo3.write(0);
+    trapservo4.write(90);
+    delay(250);
+  }
+  if (buttonState2 == HIGH) { // Manually close trapdoor
+    Serial.println("Manually closing trapdoor");
+    trapservo1.write(90); //Trap door servos close up storage
+    trapservo2.write(0);
+    trapservo3.write(90);
+    trapservo4.write(0);
+    delay(250);
+  }
+  if (buttonState3 == HIGH) {  // Manually slightly raise the storage elevator 
+    Serial.println("Manually raising elevator");
+    elevatorservo1.write(92);
+    elevatorservo2.write(92);
+    delay(500);
+    elevatorservo1.write(93.99);
+    elevatorservo2.write(93.99);
+  }
+  if (buttonState4 == HIGH) {  // Manually slightly lower the storage elevator 
+    Serial.println("Manually lowering elevator");
+    elevatorservo1.write(94.00);
+    elevatorservo2.write(94.00);
+    delay(500);
+    elevatorservo1.write(93.99);
+    elevatorservo2.write(93.99);
+  } 
+ }
+}
